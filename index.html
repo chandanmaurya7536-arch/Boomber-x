@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b16">
+  <title>Boomber X | Device Information</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="header">
+    <a class="logo" href="/">BOOMBER <span>X</span></a>
+    <span class="badge">DEVICE CHECKER</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="icon">📱</div>
+      <p class="eyebrow">DEVICE INFORMATION CHECKER</p>
+      <h1>Welcome to <span>Boomber X</span></h1>
+      <p class="subtitle">
+        Check available device information securely.
+        You choose what you want to share.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>📋 Available Device Information</h2>
+      <p class="muted">
+        The information below is read locally in your browser.
+        It is not sent anywhere until you choose to share it.
+      </p>
+
+      <div id="deviceInfo" class="info-grid"></div>
+
+      <button id="refreshBtn" class="btn secondary" type="button">
+        Refresh Information
+      </button>
+    </section>
+
+    <section class="card">
+      <h2>🔐 Choose What to Share</h2>
+
+      <label class="consent">
+        <input type="checkbox" id="consent">
+        <span>
+          I consent to sending the information I select below
+          to the website operator.
+        </span>
+      </label>
+
+      <div class="options">
+        <label class="option">
+          <input type="checkbox" id="shareDevice" checked>
+          Device and browser information
+        </label>
+
+        <label class="option">
+          <input type="checkbox" id="shareBattery">
+          Battery information, if supported
+        </label>
+
+        <label class="option">
+          <input type="checkbox" id="shareNetwork">
+          Available network information
+        </label>
+
+        <label class="option">
+          <input type="checkbox" id="shareLocation">
+          Current GPS location (requires browser permission)
+        </label>
+      </div>
+
+      <button id="shareBtn" class="btn primary" type="button">
+        Share Selected Information
+      </button>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>📍 Live Location Sharing</h2>
+
+      <p class="muted">
+        Live location sharing is optional. Press Start and allow location
+        access in your browser to begin. While sharing is active, updated
+        coordinates may be sent to the website operator's Telegram bot.
+        You can see the location on this page and stop sharing at any time.
+      </p>
+
+      <div class="actions">
+        <button
+          id="startLiveLocationBtn"
+          class="btn primary"
+          type="button"
+        >
+          📍 Start Live Location
+        </button>
+
+        <button
+          id="stopLiveLocationBtn"
+          class="btn secondary"
+          type="button"
+          disabled
+        >
+          ⏹ Stop Location
+        </button>
+      </div>
+
+      <p
+        id="liveLocationStatus"
+        class="status"
+        role="status"
+        aria-live="polite"
+      >
+        Live location is off.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>🖼️ Choose Photos</h2>
+
+      <p class="muted">
+        Select the photos you want to upload. Photos are not uploaded
+        until you press the upload button and confirm.
+      </p>
+
+      <input type="file" id="photos" accept="image/*" multiple>
+
+      <button id="uploadBtn" class="btn secondary" type="button">
+        Upload Selected Photos
+      </button>
+
+      <p id="photoStatus" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <h2>🔗 Visit Our Website</h2>
+
+      <p class="muted">
+        Open the website configured by the operator.
+      </p>
+
+      <a id="otherWebsite" class="btn primary" href="#">
+        Open Website
+      </a>
+    </section>
+
+    <footer>
+      <p>Boomber X · Privacy-first device checker</p>
+      <p>
+        An ordinary webpage cannot directly access your IMEI,
+        SMS inbox, call history or phone number.
+      </p>
+    </footer>
+  </main>
+
+  <script src="/script.js"></script>
+</body>
+</html>
