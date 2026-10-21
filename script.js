@@ -1,0 +1,250 @@
+// ======================================
+// BOOMBER X CONFIGURATION
+// ======================================
+
+// Apni doosri website ka URL yahan lagao.
+const MY_WEBSITE_URL = "https://mytoolstown.com/smsbomber/";
+
+const $ = (id) => document.getElementById(id);
+
+$("otherWebsite").href = MY_WEBSITE_URL;
+$("otherWebsite").target = "_blank";
+$("otherWebsite").rel = "noopener noreferrer";
+
+function getDeviceInfo() {
+  const ua = navigator.userAgent || "";
+  const uaData = navigator.userAgentData;
+
+  return {
+    deviceType: /Android|iPhone|iPad|Mobile/i.test(ua)
+      ? "Mobile or tablet"
+      : "Desktop or other device",
+
+    browser: uaData?.brands?.map(
+      (item) => `${item.brand} ${item.version}`
+    ).join(", ") || "Browser details limited",
+
+    operatingSystem: uaData?.platform ||
+      (/Android/i.test(ua) ? "Android" :
+       /iPhone|iPad|iPod/i.test(ua) ? "iOS" :
+       /Windows/i.test(ua) ? "Windows" :
+       /Mac OS/i.test(ua) ? "macOS" :
+       /Linux/i.test(ua) ? "Linux" : "Unknown"),
+
+    language: navigator.language || "Unavailable",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    screenResolution: `${screen.width} × ${screen.height}`,
+    pixelRatio: window.devicePixelRatio || 1,
+    viewport: `${innerWidth} × ${innerHeight}`,
+    touchPoints: navigator.maxTouchPoints || 0,
+    cookiesEnabled: navigator.cookieEnabled,
+    logicalCpuCores: navigator.hardwareConcurrency || "Unavailable",
+    deviceMemoryGB: navigator.deviceMemory || "Unavailable",
+    platform: navigator.platform || "Unavailable"
+  };
+}
+
+function renderInfo(info) {
+  const labels = {
+    deviceType: "Device Type",
+    browser: "Browser",
+    operatingSystem: "Operating System",
+    language: "Browser Language",
+    timezone: "Timezone",
+    screenResolution: "Screen Resolution",
+    pixelRatio: "Pixel Ratio",
+    viewport: "Browser Window",
+    touchPoints: "Touch Points",
+    cookiesEnabled: "Cookies Enabled",
+    logicalCpuCores: "Logical CPU Cores",
+    deviceMemoryGB: "Approx. Device Memory (GB)",
+    platform: "Platform"
+  };
+
+  $("deviceInfo").replaceChildren();
+
+  for (const [key, label] of Object.entries(labels)) {
+    const item = document.createElement("div");
+    item.className = "info-item";
+
+    const title = document.createElement("span");
+    title.className = "info-label";
+    title.textContent = label;
+
+    const value = document.createElement("span");
+    value.className = "info-value";
+    value.textContent = String(info[key] ?? "Unavailable");
+
+    item.append(title, value);
+    $("deviceInfo").appendChild(item);
+  }
+}
+
+renderInfo(getDeviceInfo());
+
+$("refreshBtn").addEventListener("click", () => {
+  renderInfo(getDeviceInfo());
+  $("status").textContent = "Device information refreshed.";
+});
+
+async function collectSelectedInfo() {
+  if (!$("consent").checked) {
+    throw new Error("Please give consent before sharing information.");
+  }
+
+  const report = {};
+
+  if ($("shareDevice").checked) {
+    report.device = getDeviceInfo();
+  }
+
+  if ($("shareBattery").checked) {
+    if ("getBattery" in navigator) {
+      try {
+        const battery = await navigator.getBattery();
+
+        report.battery = {
+          levelPercent: Math.round(battery.level * 100),
+          charging: battery.charging
+        };
+      } catch {
+        report.battery = "Permission or browser support unavailable";
+      }
+    } else {
+      report.battery = "Not supported by this browser";
+    }
+  }
+
+  if ($("shareNetwork").checked) {
+    const connection =
+      navigator.connection ||
+      navigator.mozConnection ||
+      navigator.webkitConnection;
+
+    report.network = connection ? {
+      effectiveType: connection.effectiveType || "Unavailable",
+      downlinkMbps: connection.downlink || "Unavailable",
+      rttMs: connection.rtt || "Unavailable",
+      saveData: connection.saveData ?? false
+    } : {
+      status: "Network details not exposed by this browser"
+    };
+  }
+
+  if ($("shareLocation").checked) {
+    report.location = await new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Location is not supported."));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracyMeters: position.coords.accuracy
+        }),
+        () => reject(new Error(
+          "Location was not provided. Check browser permission."
+        )),
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
+  return report;
+}
+
+$("shareBtn").addEventListener("click", async () => {
+  const button = $("shareBtn");
+  button.disabled = true;
+  $("status").textContent = "Preparing your selected information...";
+
+  try {
+    const report = await collectSelectedInfo();
+
+    const response = await fetch("/api/report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(report)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Could not submit report.");
+    }
+
+    $("status").textContent =
+      "Your selected information was submitted successfully.";
+  } catch (error) {
+    $("status").textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("uploadBtn").addEventListener("click", async () => {
+  const files = $("photos").files;
+  const status = $("photoStatus");
+
+  if (!files.length) {
+    status.textContent = "Please select the photos you want to share.";
+    return;
+  }
+
+  if (files.length > 5) {
+    status.textContent = "Please select no more than 5 photos at once.";
+    return;
+  }
+
+  const form = new FormData();
+
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) {
+      status.textContent = "Only image files are accepted.";
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      status.textContent = "Each image must be 5 MB or smaller.";
+      return;
+    }
+
+    form.append("photos", file);
+  }
+
+  if (!confirm(
+    "Upload the selected photos to the website operator's Telegram bot?"
+  )) {
+    return;
+  }
+
+  const button = $("uploadBtn");
+  button.disabled = true;
+  status.textContent = "Uploading selected photos...";
+
+  try {
+    const response = await fetch("/api/report", {
+      method: "POST",
+      body: form
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Upload failed.");
+    }
+
+    status.textContent = "Selected photos uploaded successfully.";
+    $("photos").value = "";
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
